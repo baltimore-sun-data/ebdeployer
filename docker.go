@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -38,7 +36,9 @@ func getDockerLogin() (endpoint, user, password string, err error) {
 		return "", "", "", fmt.Errorf("bad auth token %q", b)
 	}
 
-	return *data.ProxyEndpoint, string(userpass[0]), string(userpass[1]), nil
+	endpoint = strings.TrimPrefix(*data.ProxyEndpoint, "https://")
+	user, password = string(userpass[0]), string(userpass[1])
+	return
 }
 
 func makeDockerTag(ecr, repo, image string, t time.Time) string {
@@ -46,20 +46,13 @@ func makeDockerTag(ecr, repo, image string, t time.Time) string {
 }
 
 func dockerLogin(endpoint, user, password string) error {
-	cmd := exec.Command("docker", "login", "-u", user, "--password-stdin", endpoint)
-	cmd.Stdin = strings.NewReader(password)
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
+	return subprocess(password, "docker", "login", "-u", user, "--password-stdin", "https://"+endpoint)
 }
 
 func dockerBuild(tag, file string) error {
-	cmd := exec.Command("docker", "build", "-t", tag, file)
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
+	return subprocess("", "docker", "build", "-t", tag, file)
 }
 
 func dockerPush(tag string) error {
-	cmd := exec.Command("docker", "push", tag)
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
+	return subprocess("", "docker", "push", tag)
 }

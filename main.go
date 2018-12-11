@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/carlmjohnson/flagext"
@@ -83,4 +85,15 @@ func run() error {
 
 	log.Println("Create EB environment")
 	return createEBEnv(*repo, *cfg, now)
+}
+
+func subprocess(stdin string, name string, args ...string) error {
+	log.Printf("Running %q", strings.Join(append([]string{name}, args...), " "))
+	cmd := exec.Command(name, args...)
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
