@@ -26,14 +26,24 @@ type Dockerrun struct {
 		MemoryReservation int       `json:"memoryReservation"`
 		Name              string    `json:"name"`
 		Environment       []EnvPair `json:"environment,omitempty"`
-		Links             []string  `json:"links,omitempty"`
-		PortMappings      []struct {
+		MountPoints       []struct {
+			SourceVolume  string `json:"sourceVolume"`
+			ContainerPath string `json:"containerPath"`
+			ReadOnly      bool   `json:"readOnly"`
+		} `json:"mountPoints"`
+		Links        []string `json:"links,omitempty"`
+		PortMappings []struct {
 			ContainerPort int `json:"containerPort"`
 			HostPort      int `json:"hostPort"`
 		} `json:"portMappings,omitempty"`
 	} `json:"containerDefinitions"`
-	Family  string        `json:"family"`
-	Volumes []interface{} `json:"volumes"`
+	Family  string `json:"family"`
+	Volumes []struct {
+		Name string `json:"name"`
+		Host struct {
+			SourcePath string `json:"sourcePath"`
+		} `json:"host"`
+	} `json:"volumes"`
 }
 
 func writeJSON(filename string, data interface{}) error {
