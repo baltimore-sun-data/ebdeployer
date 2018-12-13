@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
@@ -41,18 +40,18 @@ func getDockerLogin() (endpoint, user, password string, err error) {
 	return
 }
 
-func makeDockerTag(ecr, repo, image string, t time.Time) string {
-	return fmt.Sprintf("%s/%s:%s-%s", ecr, repo, image, t.Format("2006-01-02-1504"))
+func makeDockerTag(ecr, repo, image, dateTag string) string {
+	return fmt.Sprintf("%s/%s:%s-%s", ecr, repo, image, dateTag)
 }
 
 func dockerLogin(endpoint, user, password string) error {
 	return subprocess(password, "docker", "login", "-u", user, "--password-stdin", "https://"+endpoint)
 }
 
-func dockerBuild(tag, file string) error {
-	return subprocess("", "docker", "build", "-t", tag, file)
+func dockerBuild(dir, file string) error {
+	return subprocess("", "docker-compose", "-f", file, "--project-directory", dir, "build")
 }
 
-func dockerPush(tag string) error {
-	return subprocess("", "docker", "push", tag)
+func dockerPush(dir, file string) error {
+	return subprocess("", "docker-compose", "-f", file, "--project-directory", dir, "push")
 }

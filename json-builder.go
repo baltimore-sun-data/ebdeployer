@@ -19,7 +19,6 @@ type EnvPair struct {
 type Dockerrun struct {
 	AWSEBDockerrunVersion int `json:"AWSEBDockerrunVersion"`
 	ContainerDefinitions  []*struct {
-		Dockerfile        string    `json:"dockerfile,omitempty"`
 		Command           []string  `json:"command,omitempty"`
 		Essential         bool      `json:"essential"`
 		Image             string    `json:"image"`

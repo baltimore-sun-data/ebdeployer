@@ -1,6 +1,7 @@
 package main // import "github.com/baltimore-sun-data/ebdeployer"
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -20,7 +21,8 @@ func main() {
 }
 
 func run() error {
-	now := time.Now()
+	compose := flag.String("compose", "docker-compose.yaml", "`path` to the docker-compose file")
+	dir := flag.String("dir", ".", "`path` of Docker project directory")
 	repo := flag.String("repo", "", "name of the repo")
 	cfg := flag.String("cfg", "", "name of the eb config")
 	secretsFile := flagext.File("secrets.json")
@@ -36,6 +38,23 @@ func run() error {
 		return fmt.Errorf("must set cfg name with -cfg")
 	}
 
+	now := time.Now()
+	dateTag := os.Getenv("DATE_TAG")
+	if dateTag == "" {
+		dateTag = now.Format("2006-01-02-1504")
+		os.Setenv("DATE_TAG", dateTag)
+	}
+
+	var err error
+	appVersion := os.Getenv("APP_VERSION")
+	if appVersion == "" {
+		appVersion, err = gitVersion()
+		if err != nil {
+			return err
+		}
+		os.Setenv("APP_VERSION", appVersion)
+	}
+
 	log.Println("Get docker login from AWS")
 	ecr, user, password, err := getDockerLogin()
 	if err != nil {
@@ -44,6 +63,17 @@ func run() error {
 
 	log.Println("Docker login")
 	if err = dockerLogin(ecr, user, password); err != nil {
+		return err
+	}
+
+	os.Setenv("ECR_REPO", ecr)
+
+	log.Println("Docker build")
+	if err = dockerBuild(*dir, *compose); err != nil {
+		return err
+	}
+	log.Println("Docker push")
+	if err = dockerPush(*dir, *compose); err != nil {
 		return err
 	}
 
@@ -61,17 +91,8 @@ func run() error {
 
 	for _, cd := range base.ContainerDefinitions {
 		// Fix repo/tag
-		cd.Image = makeDockerTag(ecr, *repo, cd.Image, now)
-		log.Printf("Docker build %s from %q", cd.Image, cd.Dockerfile)
-		if err = dockerBuild(cd.Image, cd.Dockerfile); err != nil {
-			return err
-		}
-		// AWS doesn't expect a Dockerfile field, so drop it
-		cd.Dockerfile = ""
-		log.Printf("Docker push %s", cd.Image)
-		if err = dockerPush(cd.Image); err != nil {
-			return err
-		}
+		cd.Image = makeDockerTag(ecr, *repo, cd.Image, dateTag)
+
 		// Add in secrets
 		for name, val := range secrets[cd.Name] {
 			cd.Environment = append(cd.Environment, EnvPair{name, val})
@@ -96,4 +117,11 @@ func subprocess(stdin string, name string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func gitVersion() (string, error) {
+	log.Println(`Running "git describe --always"`)
+	cmd := exec.Command("git", "describe", "--always")
+	b, err := cmd.Output()
+	return string(bytes.TrimSpace(b)), err
 }
