@@ -2,7 +2,7 @@
 
 EBdeployer is a wrapper for deploying a Docker multi-image build to AWS Elastic Beanstalk.
 
-Elastic Beanstalk is designed to make it simple to spin up new servers, but unfortunately, the awsebcli tool does not currently automated the steps involved in creating a Docker multi-image build. This tool fixes that problem.
+Elastic Beanstalk is designed to make it simple to spin up new servers, but unfortunately, the awsebcli tool does not currently automate the steps involved in creating a Docker multi-image build. This tool fixes that problem.
 
 ## Installation
 
