@@ -29,6 +29,7 @@ func run() error {
 	flag.Var(secretsFile, "secrets", "json `file` to read secrets out of")
 	baseFile := flagext.File("Dockerrun.base.json")
 	flag.Var(baseFile, "dockerrun", "json `file` to use as base template for Dockerrun.aws.json")
+	deploy := flag.Bool("deploy", true, "run eb create env after setting up Dockerrun file")
 	flag.Parse()
 
 	if *repo == "" {
@@ -102,6 +103,10 @@ func run() error {
 	log.Println("Write Dockerrun.aws.json")
 	if err = writeJSON("Dockerrun.aws.json", &base); err != nil {
 		return err
+	}
+
+	if !*deploy {
+		return nil
 	}
 
 	log.Println("Create EB environment")
