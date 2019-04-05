@@ -29,6 +29,8 @@ func run() error {
 	baseFile := flagext.File("Dockerrun.base.json")
 	flag.Var(baseFile, "dockerrun", "json `file` to use as base template for Dockerrun.aws.json")
 	deploy := flag.Bool("deploy", true, "run eb create env after setting up Dockerrun file")
+	noPull := flag.Bool("no-pull", false, "do not issue a git pull before building")
+
 	flag.Parse()
 
 	if *repo == "" {
@@ -38,6 +40,14 @@ func run() error {
 		return fmt.Errorf("must set cfg name with -cfg")
 	}
 
+	var err error
+	if !*noPull {
+		log.Println("Issuing git pull")
+		if err = repoPull(); err != nil {
+			return err
+		}
+	}
+
 	now := time.Now()
 	dateTag := os.Getenv("DATE_TAG")
 	if dateTag == "" {
@@ -45,7 +55,6 @@ func run() error {
 		os.Setenv("DATE_TAG", dateTag)
 	}
 
-	var err error
 	appVersion := os.Getenv("APP_VERSION")
 	if appVersion == "" {
 		appVersion, err = repoHash()

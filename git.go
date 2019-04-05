@@ -49,3 +49,27 @@ func repoPushTag(name string) error {
 
 	return nil
 }
+
+func repoPull() error {
+	repo, err := git.PlainOpen(".")
+	if err != nil {
+		return err
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	status, err := wt.Status()
+	if err != nil {
+		return err
+	}
+	if !status.IsClean() {
+		return git.ErrWorktreeNotClean
+	}
+	err = wt.Pull(&git.PullOptions{})
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return err
+	}
+
+	return nil
+}
