@@ -1,7 +1,6 @@
 package main // import "github.com/baltimore-sun-data/ebdeployer"
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -49,7 +48,7 @@ func run() error {
 	var err error
 	appVersion := os.Getenv("APP_VERSION")
 	if appVersion == "" {
-		appVersion, err = gitVersion()
+		appVersion, err = repoHash()
 		if err != nil {
 			return err
 		}
@@ -110,13 +109,18 @@ func run() error {
 	}
 
 	log.Println("Create EB environment")
-	env, err := createEBEnv(*repo, *cfg, now)
+	envname, err := createEBEnv(*repo, *cfg, now)
 	if err != nil {
 		return err
 	}
 
+	log.Println("Tagging release")
+	if err = repoPushTag("release/" + envname); err != nil {
+		return err
+	}
+
 	log.Println("Getting EB environment description")
-	return showEBEnvInfo(env)
+	return showEBEnvInfo(envname)
 }
 
 func subprocess(stdin string, name string, args ...string) error {
@@ -128,11 +132,4 @@ func subprocess(stdin string, name string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func gitVersion() (string, error) {
-	log.Println(`Running "git describe --always"`)
-	cmd := exec.Command("git", "describe", "--always")
-	b, err := cmd.Output()
-	return string(bytes.TrimSpace(b)), err
 }
