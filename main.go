@@ -110,7 +110,13 @@ func run() error {
 	}
 
 	log.Println("Create EB environment")
-	return createEBEnv(*repo, *cfg, now)
+	env, err := createEBEnv(*repo, *cfg, now)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Getting EB environment description")
+	return showEBEnvInfo(env)
 }
 
 func subprocess(stdin string, name string, args ...string) error {
