@@ -53,6 +53,7 @@ func run() error {
 	if dateTag == "" {
 		dateTag = now.Format("2006-01-02-1504")
 		os.Setenv("DATE_TAG", dateTag)
+		log.Println("DATE_TAG set to", dateTag)
 	}
 
 	appVersion := os.Getenv("APP_VERSION")
@@ -62,6 +63,7 @@ func run() error {
 			return err
 		}
 		os.Setenv("APP_VERSION", appVersion)
+		log.Println("APP_VERSION set to", appVersion)
 	}
 
 	log.Println("Get docker login from AWS")
